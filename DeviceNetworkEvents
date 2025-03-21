@@ -1,0 +1,4 @@
+DeviceNetworkEvents
+| search ""
+| project DeviceName, IPAddress, TimeGenerated
+| order by TimeGenerated desc
