@@ -1,10 +1,14 @@
-### Pobiera ostatnie zdarzenia sieciowe urządzeń
+//// Pobiera ostatnie zdarzenia sieciowe urządzeń 
 DeviceNetworkEvents
-| search ""
-| project DeviceName, IPAddress, TimeGenerated
-| order by TimeGenerated desc
+|  search "paste_data_from_user_here" 
+| project DeviceName,
+| order by test
 
-### Filtruje zdarzenia dla konkretnego adresu IP
+
+
+////  Filtruje zdarzenia dla konkretnego adresu IP
 DeviceNetworkEvents
+| search "paste_data_from_user_here" 
 | where IPAddress == "192.168.1.1"
+
 | project DeviceName, IPAddress, TimeGenerated
