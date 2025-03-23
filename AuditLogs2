@@ -1,5 +1,4 @@
-//// 
-//.to jest test1
+////
 AuditLogs
 | search ""
 | where OperationName == "Update conditional access policy"
