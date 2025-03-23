@@ -10,5 +10,4 @@ DeviceNetworkEvents
 DeviceNetworkEvents
 | search "paste_data_from_user_here" 
 | where IPAddress == "192.168.1.1"
-
 | project DeviceName, IPAddress, TimeGenerated
