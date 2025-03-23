@@ -1,4 +1,5 @@
 ////
+// to jest komenatrz
 AuditLogs
 | search ""
 | where OperationName == "Update conditional access policy"
