@@ -1,0 +1,8 @@
+////224. Failed Azure Data Lake operations
+AzureDiagnostics
+| where Category == 'DataLakeStoreLogs' and Level == 'Warning'
+
+
+////225. Unusual Azure AD B2B user password resets
+AuditLogs
+| where ActivityDisplayName == 'Self-service password reset' and ResultType == 'success'
