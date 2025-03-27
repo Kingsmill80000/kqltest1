@@ -5,4 +5,5 @@ AzureDiagnostics
 
 //////225. Unusual Azure AD B2B user password resets
 AuditLogs
+| search ""
 | where ActivityDisplayName == 'Self-service password reset' and ResultType == 'success'
