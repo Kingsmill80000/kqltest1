@@ -17,3 +17,9 @@ DeviceNetworkEvents
 DeviceNetworkEvents
 | search "paste_data_from_user_here" 
 | project DeviceName3
+
+
+////
+DeviceNetworkEvents
+| search "paste_data_from_user_here" 
+| project DeviceName5
