@@ -1,0 +1,68 @@
+//// Failed login attempts:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4625
+
+//// Successful login attempts:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+
+//// Brute-force attacks:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4625
+| summarize count() by TargetUserName
+| where count_ > <threshold>
+
+//// Account lockouts:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4740
+
+//// User account changes:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4738 or EventID == 4720
+
+//// Privileged account usage:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID in (4672, 4673, 4688) and AccountType == 'User'
+
+//// Suspicious process execution:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688 and InitiatingProcessCommandLine has_any ('powershell.exe', 'cmd.exe')
+
+//// Data exfiltration:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 5145 and AccessMask == '0x2'
+
+//// Network traffic anomalies:
+SecurityAlert
+| where ProviderName == 'MicrosoftNetworkProtection' and AlertType == 'AnomalousNetworkTraffic'
+
+//// Malware detection:
+SecurityAlert
+| where ProviderName == 'MicrosoftDefenderATP' and AlertType == 'MalwareDetection'
+
+//// DDoS attacks:
+SecurityAlert
+| where ProviderName == 'DDoSProtection' and AlertType == 'DDoSGeneric'
+
+//// Suspicious PowerShell activity:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4104 and (CommandLine has_any ('Invoke-Expression', 'Invoke-Script', 'iex'))
+
+//// Unusual account behavior:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4724 or EventID == 4725
+
+//// Privilege escalation attempts:
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4672 and NewProcessName contains 'cmd.exe'
