@@ -1,68 +1,677 @@
-//// Failed login attempts:
+////// Failed login attempts:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4625
 
-//// Successful login attempts:
+////// Successful login attempts:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4624
 
-//// Brute-force attacks:
+////// Brute-force attacks:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4625
 | summarize count() by TargetUserName
 | where count_ > <threshold>
 
-//// Account lockouts:
+////// Account lockouts:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4740
 
-//// User account changes:
+////// User account changes:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4738 or EventID == 4720
 
-//// Privileged account usage:
+////// Privileged account usage:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID in (4672, 4673, 4688) and AccountType == 'User'
 
-//// Suspicious process execution:
+////// Suspicious process execution:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4688 and InitiatingProcessCommandLine has_any ('powershell.exe', 'cmd.exe')
 
-//// Data exfiltration:
+////// Data exfiltration:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 5145 and AccessMask == '0x2'
 
-//// Network traffic anomalies:
+////// Network traffic anomalies:
 SecurityAlert
 | where ProviderName == 'MicrosoftNetworkProtection' and AlertType == 'AnomalousNetworkTraffic'
 
-//// Malware detection:
+////// Malware detection:
 SecurityAlert
 | where ProviderName == 'MicrosoftDefenderATP' and AlertType == 'MalwareDetection'
 
-//// DDoS attacks:
+////// DDoS attacks:
 SecurityAlert
 | where ProviderName == 'DDoSProtection' and AlertType == 'DDoSGeneric'
 
-//// Suspicious PowerShell activity:
+////// Suspicious PowerShell activity:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4104 and (CommandLine has_any ('Invoke-Expression', 'Invoke-Script', 'iex'))
 
-//// Unusual account behavior:
+////// Unusual account behavior:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4724 or EventID == 4725
 
-//// Privilege escalation attempts:
+////// Privilege escalation attempts:
 SecurityEvent
 | search "paste_data_from_user_here"
 | where EventID == 4672 and NewProcessName contains 'cmd.exe'
+
+////// Multiple failed logons from single IP
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4625
+| summarize FailedCount = count() by TargetAccount, IpAddress
+| where FailedCount > 15
+
+////// Logons using disabled accounts
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where TargetAccount in (SecurityEvent | where EventID == 4725 | summarize by TargetAccount)
+
+////// Clear text authentication attempts
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where LogonType == 8
+
+////// Service account interactive desktop logins
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where LogonType == 2
+| where TargetAccount contains "svc"
+
+////// Kerberos preauth disabled modifications
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4738
+| where UserAccountControl has_any ("2064","2096")
+
+////// Off-hours successful logons
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where hour(TimeGenerated) between (22 .. 5)
+
+////// Local admin group membership changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID in (4728,4732,4756)
+| where TargetGroup contains "admin"
+
+////// Debug privilege assignments
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4672
+| where Privileges has "SeDebugPrivilege"
+
+////// Non-admin scheduled task creation
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4698
+| where SubjectUserName !contains "admin"
+
+////// Antimalware process termination
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4689
+| where Process contains "MsMpEng"
+
+////// Anonymous logon attempts
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4625
+| where TargetAccount contains "ANONYMOUS"
+
+////// Password policy modifications
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4739
+| where Policy contains "Password"
+
+////// Event log clearance events
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID in (1102,517)
+| where EventSourceName contains "Eventlog"
+
+////// Unusual parent-child processes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where ParentProcessName !in ("explorer.exe","svchost.exe")
+
+////// Firewall rule deletions
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4946
+| where RuleName contains "Delete"
+
+////// PowerShell execution chains
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "powershell"
+
+////// Run registry key modifications
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4657
+| where ObjectName contains "Run"
+
+////// Security package loads
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4690
+| where PackageName contains "kerberos"
+
+////// System account logons
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where TargetAccount contains "SYSTEM"
+
+////// Account lockout storms
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4740
+| summarize Lockouts = count() by TargetAccount, bin(TimeGenerated, 15m)
+
+////// Hidden account creation
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4720
+| where TargetAccount endswith "$"
+
+////// DC certificate requests
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4886
+| where Template contains "DomainController"
+
+////// New logon type patterns
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where LogonType in (9,10)
+
+////// GPO modifications
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 5136
+| where ObjectClass contains "groupPolicy"
+
+////// WMI persistence creation
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 5861
+| where ConsumerName contains "malicious"
+
+////// Non-standard authentication packages
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where AuthenticationPackageName !in ("Kerberos","NTLM")
+
+////// SAM database access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4661
+| where ObjectName contains "SAM"
+
+////// Unconstrained delegation config
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4742
+| parse EventData with * 'NewUacValue">' NewUacValue " *"
+| where NewUacValue == "0x2080"
+
+////// Account sensitivity changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4738
+| where UserAccountControl has_any ("2062","2094")
+
+////// Process hollowing patterns
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where ParentProcessName contains "svchost"
+| where NewProcessName contains "notepad"
+
+////// Service binary path changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4697
+| where ServiceFileName contains "temp"
+
+////// Network share enumeration
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 5145
+| where RelativeTargetName contains "admin"
+
+////// Token privilege adjustments
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4703
+| where PrivilegeList contains "SeBackupPrivilege"
+
+////// Logon script modifications
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4704
+| where ScriptName contains ".ps1"
+
+////// Audit policy subcategory changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4715
+| where Subcategory contains "Logon"
+
+////// Special group membership
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4728
+| where TargetGroup contains "Enterprise Admins"
+
+////// User rights assignments
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4704
+| where Privilege contains "Debug"
+
+////// Security descriptor modifications
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4670
+| where ObjectName contains "LSASS"
+
+////// Suspicious service types
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4697
+| where ServiceType == "0x10"
+
+////// Process access violations
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4656
+| where ObjectName contains "lsass.exe"
+
+////// Registry virtual store access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4656
+| where ObjectName contains "VirtualStore"
+
+////// Group membership enumeration
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4799
+| where TargetUserName contains "admin"
+
+////// Credential manager access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4663
+| where ObjectName contains "Credentials"
+
+////// LSA protection changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4611
+| where Feature contains "LSA"
+
+////// TGT delegation changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4738
+| where UserAccountControl contains "0x1000000"
+
+////// Audit failure events
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4625
+| where Status == "0xc000006d"
+
+////// Protected process access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4674
+| where ProcessName contains "protected"
+
+////// Windows subsystem launches
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "wsl.exe"
+
+////// Clipboard data access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4656
+| where ObjectName contains "Clipboard"
+
+////// Time provider changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4616
+| where Provider contains "NTP"
+
+////// Security process creation
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "vssadmin"
+
+////// Boot configuration changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4689
+| where Process contains "bcdedit"
+
+////// COM object access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4656
+| where ObjectName contains "CLSID"
+
+////// DNS client events
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "dnsclient"
+
+////// File share anomalies
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 5140
+| where ShareName contains "admin"
+
+////// Kernel driver loads
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4696
+| where ServiceName contains "sys"
+
+////// Logon session reuse
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where LogonId in (SecurityEvent | where EventID == 4634 | summarize by LogonId)
+
+////// MSI package installations
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "msiexec"
+
+////// Named pipe creation
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4656
+| where ObjectName contains "pipe"
+
+////// Network connection attempts
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "netstat"
+
+////// Object permission changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4670
+| where ObjectName contains "SAM"
+
+////// Password filter changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4657
+| where ObjectName contains "Notification Packages"
+
+////// Process injection patterns
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where ParentProcessName contains "word"
+| where NewProcessName contains "powershell"
+
+////// RDP session reconnections
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4778
+| where ClientName contains "%"
+
+////// Security principal changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4735
+| where TargetAccount contains "sql"
+
+////// Service control manager access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4697
+| where ServiceName contains "scmanager"
+
+////// Shared section access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4656
+| where ObjectName contains "BaseNamedObjects"
+
+////// Task scheduler job creation
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4698
+| where TaskName contains "update"
+
+////// Trusted domain modifications
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4706
+| where DomainName contains "local"
+
+////// User initiated logoffs
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4647
+| where SubjectUserName contains "admin"
+
+////// Volume shadow copy ops
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "vssadmin"
+
+////// WDigest configuration
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4657
+| where ObjectName contains "WDigest"
+
+////// WinRM configuration
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4704
+| where Privilege contains "WinRM"
+
+////// Wireless network config
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "netsh"
+
+////// WMI permanent events
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 5861
+| where ConsumerName contains "ActiveScript"
+
+////// X509 certificate store
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4879
+| where StoreName contains "MY"
+
+////// Zone transfer attempts
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 5145
+| where AccessMask == "0x100"
+
+////// AppLocker bypass
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 8002
+| where Fqbn == "-"
+
+////// BitLocker suspension
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "manage-bde"
+
+////// Clipboard operations
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4656
+| where ObjectName contains "Clipboard"
+
+////// COM hijacking
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4657
+| where ObjectName contains "TreatAs"
+
+////// Credential dumping
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "procdump"
+
+////// DCShadow indicators
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4742
+| where Computer contains "DC"
+
+////// DNS server changes
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "dnscmd"
+
+////// DPAPI activity
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "vaultcmd"
+
+////// Dynamic linker hijacking
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "rundll32"
+
+////// Event tracing stops
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4689
+| where Process contains "tracept"
+
+////// Fileless execution
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "regsvr32"
+
+////// Group Policy preferences
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "gpp"
+
+////// Hypervisor launch
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "vmwp"
+
+////// LSASS access
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4663
+| where ObjectName contains "lsass"
+
+////// MBR modifications
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "mbr"
+
+////// NetNTLM downgrade
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4624
+| where LmPackageName contains "NTLM"
+
+////// Password spray detection
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4625
+| summarize FailedCount = count() by IpAddress
+| where FailedCount between (100 .. 500)
+
+////// RDP session hijacking
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4778
+| where ClientName contains "::1"
+
+////// Registry backup
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "reg save"
+
+////// Security support provider
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4690
+| where PackageName contains "credman"
+
+////// Service DLL hijack
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4697
+| where ServiceDll contains "temp"
+
+////// UAC bypass attempts
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "cmstp"
+
+////// Windows Error Reporting
+SecurityEvent
+| search "paste_data_from_user_here"
+| where EventID == 4688
+| where NewProcessName contains "werfault"
+
+
+
