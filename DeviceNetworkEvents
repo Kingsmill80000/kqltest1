@@ -32,7 +32,7 @@ DeviceNetworkEvents
 let process_drop_via_arc = (
     DeviceFileEvents
     | where TimeGenerated > ago(7d)
-    | search ""
+    |  search "paste_data_from_user_here" 
     // Search for file created events by Arc Custom Script Handler
     | where ActionType == "FileCreated"
     | where InitiatingProcessFileName =~ "customscripthandler.exe"
@@ -40,7 +40,7 @@ let process_drop_via_arc = (
     | distinct SHA256
 );
 DeviceNetworkEvents
-| search ""
+| search "paste_data_from_user_here" 
 | where TimeGenerated > ago(1h)
 | join kind=inner process_drop_via_arc on $left.InitiatingProcessSHA256 == $right.SHA256
 | where RemotePort in ("5985", "5986", "445", "3389", "22", "5900", "135")
